@@ -1,0 +1,54 @@
+﻿# 统一的陶土橙渐变(绝对坐标, 让 12 片星芒共用同一束光)
+function New-MarkBrush {
+    $b = New-Object System.Windows.Media.RadialGradientBrush
+    $b.MappingMode = [System.Windows.Media.BrushMappingMode]::Absolute
+    $b.Center = New-Object System.Windows.Point(120, 92)
+    $b.GradientOrigin = New-Object System.Windows.Point(120, 92)
+    $b.RadiusX = 152; $b.RadiusY = 152
+    [void]$b.GradientStops.Add((New-Gs '#FFF3C0A6' 0))
+    [void]$b.GradientStops.Add((New-Gs '#FFC96A45' 0.45))
+    [void]$b.GradientStops.Add((New-Gs '#FFBD5D3A' 1))
+    return $b
+}
+
+# 十二道等宽圆头射线: 和中间的圆盘合起来就是 Claude 星号(整只就是标志轮廓)
+# 局部坐标: (0,0) = 宠物中心; 齿从半径 26 长到 94, 所以转起来是绕中心
+$script:PetalData = 'M -9.5,-26.5 L -9.5,-84.5 A 9.5,9.5 0 0 1 9.5,-84.5 L 9.5,-26.5 A 9.5,9.5 0 0 1 -9.5,-26.5 Z'
+function Initialize-Blossom {
+    for ($i = 0; $i -lt 0; $i++) {
+        $p = New-Object System.Windows.Shapes.Path
+        $p.Data = [System.Windows.Media.Geometry]::Parse($script:PetalData)
+        $p.Fill = New-MarkBrush
+        $p.RenderTransformOrigin = New-Object System.Windows.Point(0, 0)
+        $p.RenderTransform = New-Object System.Windows.Media.RotateTransform($i * 30)
+        $p.IsHitTestVisible = $false
+        [System.Windows.Controls.Canvas]::SetLeft($p, $script:CenterX)
+        [System.Windows.Controls.Canvas]::SetTop($p, $script:CenterY)
+        [void]$BlossomLayer.Children.Add($p)
+    }
+}
+Initialize-Blossom
+
+# 身边飘的三颗小闪光
+$script:Orbit = New-Object System.Collections.ArrayList
+function Initialize-Orbit {
+    $i = 0
+    foreach ($phase in @(0.6, 2.7, 4.8)) {
+        $p = New-Object System.Windows.Shapes.Path
+        $p.Data = [System.Windows.Media.Geometry]::Parse($script:SparkData)
+        $p.Fill = New-LinBrush -colors @('#F2FFFFFF', '#FFF3B79C') -offsets @(0, 1)
+        $p.RenderTransformOrigin = New-Object System.Windows.Point(0, 0)
+        $rt = New-Object System.Windows.Media.RotateTransform(0)
+        $p.RenderTransform = $rt
+        $p.IsHitTestVisible = $false
+        [void]$OrbitLayer.Children.Add($p)
+        [void]$script:Orbit.Add(@{
+                El = $p; Rot = $rt; Phase = $phase
+                Speed = 0.30 + 0.06 * $i
+                Radius = 92.0 + 8.0 * $i
+            })
+        $i++
+    }
+}
+Initialize-Orbit
+
